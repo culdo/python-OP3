@@ -1,4 +1,4 @@
-# Simple Python API for Robotis-OP3
+# Simple Python API for ROBOTIS OP3
 Intend to easier Robot develop.
 ## Requires
 * Environment setup followed official e-manual
