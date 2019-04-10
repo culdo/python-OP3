@@ -19,7 +19,7 @@ class Walking(object):
         self._sub_rosinfo = rospy.Subscriber("/rosout", Log, self._cb_rosinfo, queue_size=10)
 
         # Walking
-        self._pub_walking = rospy.Publisher(self.ns + "/walking/command", String, queue_size=0)
+        self._pub_walking_command = rospy.Publisher(self.ns + "/walking/command", String, queue_size=0)
         self._pub_walking_params = rospy.Publisher(self.ns + "/walking/set_params", WalkingParam, queue_size=0)
         self._pub_head_scan = rospy.Publisher(self.ns + "/head_control/scan_command", String, queue_size=0)
 
@@ -33,6 +33,10 @@ class Walking(object):
         self._pub_wholebody_balance = rospy.Publisher(self.ns + "/online_walking/wholebody_balance_msg", String,
                                                       queue_size=0)
         self._pub_reset_body = rospy.Publisher(self.ns + "/online_walking/reset_body", Bool, queue_size=0)
+
+        # Walking Services
+        rospy.wait_for_service(self.ns + '/walking/get_params')
+        self.get_walking_param_srv_ = rospy.ServiceProxy(self.ns + '/walking/get_params', GetWalkingParam)
 
     def _cb_movement_done(self, msg):
         print "movement_done: " + msg.data

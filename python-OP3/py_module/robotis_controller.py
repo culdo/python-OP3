@@ -33,9 +33,9 @@ class Controller(object):
 
         # Services (NOT test yet!!!)
         rospy.wait_for_service(self.ns + '/get_present_joint_ctrl_modules')
-        self.get_joint_module_srv = rospy.ServiceProxy(self.ns + '/get_present_joint_ctrl_modules', GetJointModule)
+        self.get_joint_module_srv_ = rospy.ServiceProxy(self.ns + '/get_present_joint_ctrl_modules', GetJointModule)
         rospy.wait_for_service(self.ns + '/set_present_joint_ctrl_modules')
-        self.set_joint_module_srv = rospy.ServiceProxy(self.ns + '/set_present_joint_ctrl_modules', SetJointModule)
+        self.set_joint_module_srv_ = rospy.ServiceProxy(self.ns + '/set_present_joint_ctrl_modules', SetJointModule)
 
         rospy.loginfo("Waiting for joints to be populated...")
         while not rospy.is_shutdown():
@@ -78,7 +78,7 @@ class Controller(object):
         try:
             srv = GetJointModule()
             srv.joint_name = joint_names
-            return self.get_joint_module_srv(srv).module_name
+            return self.get_joint_module_srv_(srv).module_name
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
 
@@ -87,7 +87,7 @@ class Controller(object):
             srv = SetJointModule()
             srv.joint_name = joint_names
             srv.module_name = module_names
-            return self.set_joint_module_srv(srv)
+            return self.set_joint_module_srv_(srv)
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
 

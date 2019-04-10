@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from sensor_msgs.msg import Imu
 from std_msgs.msg import String
+from robotis_controller_msgs.msg import SyncWriteItem
 import rospy
 
 
@@ -14,5 +15,23 @@ class OpenCR(object):
         pass
 
     def _cb_button(self, msg):
+        """
+        custom callback
+        :data: "mode", "start", "user"
+        (when long-press, data=data+"_long")
+        :return:
+        """
         # print msg
         pass
+
+    def set_led(self, led):
+        """
+        :param led: 1, 2, 4, 7(ALL)
+        :return:
+        """
+        msg = SyncWriteItem()
+        msg.item_name = "LED"
+        msg.joint_name = ["open-cr"]
+        msg.value = [led]
+
+        self._pub_sync_write.publish(msg)
