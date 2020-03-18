@@ -15,7 +15,7 @@ class Action(object):
         rospy.wait_for_service(self.ns + '/action/is_running')
         self.action_is_running_srv = rospy.ServiceProxy(self.ns + '/action/is_running', IsRunning)
 
-    def play_motion(self, action, start_voice, end_voice=None, is_blocking=True):
+    def play_motion(self, action, start_voice, done_voice=None, is_blocking=True):
         """
         Available page_num:
          -2 : BREAK
@@ -49,21 +49,23 @@ class Action(object):
           204 : Look
           126 : Push up
         """
+        self.is_action_done = False
+
+        if start_voice:
+            self.google_tts(start_voice)
+
         if action == "ini_pose":
             self._pub_ini_pose.publish(action)
             self.present_module = action
         else:
-            self.set_module("action_module")
+            self.check_module("action_module")
             self._pub_action.publish(action)
 
-        self.google_tts(start_voice)
-
         if is_blocking:
-            self.is_action_done = False
             while not self.is_action_done:
                 rospy.sleep(0.1)
-        if end_voice:
-            self.google_tts(end_voice)
+        if done_voice:
+            self.google_tts(done_voice)
 
     def go_init_pose(self, start_voice="進入賢者模式。"):
         if self.present_module != "ini_pose":

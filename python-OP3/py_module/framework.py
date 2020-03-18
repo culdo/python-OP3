@@ -22,7 +22,7 @@ class Framework(Controller, Utility, Action, DirectControl, Walking, OpenCR):
 
     def safety_suspend(self):
         self.go_init_pose()
-        self.set_module("direct_control_module", voice="林北要軟了，我說身體。")
+        self.check_module("direct_control_module", voice="林北要軟了，我說身體。")
         self.set_angles({"l_el": 0,
                          "r_el": 0})
         rospy.sleep(2)

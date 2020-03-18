@@ -24,5 +24,5 @@ class Op3(Framework):
 if "__main__" == __name__:
     op3_tester = Op3()
     # op3_tester.ready_for_walking()
-    # op3_tester.safety_suspend()
+    op3_tester.safety_suspend()
     pass

@@ -13,6 +13,7 @@ class Controller(object):
         self.present_module = None
         self.module_each_joint = {}
         self.angle_each_joint = {}
+        self.prev_time = 0.0
 
         self._sub_joints = rospy.Subscriber(self.ns + "/present_joint_states", JointState, self._cb_joints,
                                             queue_size=10)
@@ -35,7 +36,7 @@ class Controller(object):
         rospy.wait_for_service(self.ns + '/get_present_joint_ctrl_modules')
         self.get_joint_module_srv_ = rospy.ServiceProxy(self.ns + '/get_present_joint_ctrl_modules', GetJointModule)
         rospy.wait_for_service(self.ns + '/set_present_joint_ctrl_modules')
-        self.set_joint_module_srv_ = rospy.ServiceProxy(self.ns + '/set_present_joint_ctrl_modules', SetJointModule)
+        self.set_joint_module_srv = rospy.ServiceProxy(self.ns + '/set_present_joint_ctrl_modules', SetJointModule)
 
         rospy.loginfo("Waiting for joints to be populated...")
         while not rospy.is_shutdown():
@@ -67,9 +68,17 @@ class Controller(object):
             #     self.google_tts("動作開始")
         elif msg.module_name == "SENSOR":
             print msg.status_msg
-            if float(msg.status_msg[15:-1]) < 11.1:
-                self._pub_suspend.publish(True)
-            self.google_tts("電壓剩餘：" + msg.status_msg[15:-1] + "伏特。")
+            # Debugging
+            curr_time = rospy.get_time()
+            if curr_time-self.prev_time > 10.0:
+                if float(msg.status_msg[15:-1]) < 11.1:
+                    # self._pub_suspend.publish(True)
+                    self.google_tts("快關機快關機")
+                    self.prev_time = curr_time
+
+                if self.is_action_done and self.is_walking_done:
+                    self.google_tts("電壓剩餘：" + msg.status_msg[15:-1] + "伏特。")
+                    self.prev_time = curr_time
 
     def get_angles(self, joints):
         return [self.angle_each_joint[joint] for joint in joints]
@@ -87,11 +96,11 @@ class Controller(object):
             srv = SetJointModule()
             srv.joint_name = joint_names
             srv.module_name = module_names
-            return self.set_joint_module_srv_(srv)
+            return self.set_joint_module_srv(srv)
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
 
-    def set_module(self, module, voice=None, is_blocking=True):
+    def check_module(self, module, voice=None, is_blocking=True):
         if self.present_module != module:
             self._pub_module.publish(module)
             if is_blocking:
@@ -107,6 +116,8 @@ class Controller(object):
                     self.google_tts("進入動作模式。")
             else:
                 self.google_tts(voice)
+        else:
+            print module + " already in use!!!"
 
     def torque_off(self, joint_names=None):
         msg = SyncWriteItem()
