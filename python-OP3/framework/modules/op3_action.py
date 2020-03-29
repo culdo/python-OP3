@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from op3_action_module_msgs.srv import IsRunning
 import rospy
 from std_msgs.msg import String, Int32
-from robotis_controller import Controller
+from .robotis_controller import Controller
 
 
 class Action(object):

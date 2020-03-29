@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import rospy
 from robotis_controller_msgs.msg import StatusMsg, SyncWriteItem, JointCtrlModule
 from robotis_controller_msgs.srv import GetJointModule, SetJointModule
@@ -57,7 +56,7 @@ class Controller(object):
 
     def _cb_status(self, msg):
         if msg.module_name == "Action" or msg.module_name == "Base":
-            print msg.status_msg
+            print(msg.status_msg)
             if msg.status_msg == "Action_Finish" or \
                     msg.status_msg == "Finish Init Pose" or \
                     msg.status_msg[:6] == "Failed":
@@ -67,7 +66,7 @@ class Controller(object):
             # else:
             #     self.google_tts("動作開始")
         elif msg.module_name == "SENSOR":
-            print msg.status_msg
+            print(msg.status_msg)
             # Debugging
             curr_time = rospy.get_time()
             if curr_time-self.prev_time > 10.0:
@@ -88,8 +87,8 @@ class Controller(object):
             srv = GetJointModule()
             srv.joint_name = joint_names
             return self.get_joint_module_srv_(srv).module_name
-        except rospy.ServiceException, e:
-            print "Service call failed: %s" % e
+        except rospy.ServiceException as e:
+            print("Service call failed: %s" % e)
 
     def set_joint_module(self, joint_names, module_names):
         try:
@@ -97,8 +96,8 @@ class Controller(object):
             srv.joint_name = joint_names
             srv.module_name = module_names
             return self.set_joint_module_srv(srv)
-        except rospy.ServiceException, e:
-            print "Service call failed: %s" % e
+        except rospy.ServiceException as e:
+            print("Service call failed: %s" % e)
 
     def check_module(self, module, voice=None, is_blocking=True):
         if self.present_module != module:
@@ -108,7 +107,7 @@ class Controller(object):
                 while not self.is_module_applied:
                     rospy.sleep(0.1)
             self.present_module = module
-            print "Set " + module + " done."
+            print("Set " + module + " done.")
             if voice is None:
                 if self.present_module == "direct_control_module":
                     self.google_tts("進入手動模式。")
@@ -117,7 +116,7 @@ class Controller(object):
             else:
                 self.google_tts(voice)
         else:
-            print module + " already in use!!!"
+            print(module + " already in use!!!")
 
     def torque_off(self, joint_names=None):
         msg = SyncWriteItem()

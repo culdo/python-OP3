@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from sensor_msgs.msg import Imu
 from std_msgs.msg import String
 from robotis_controller_msgs.msg import SyncWriteItem

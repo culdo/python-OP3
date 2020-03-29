@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import rospy
 from op3_walking_module_msgs.srv import GetWalkingParam, SetWalkingParam
 from op3_walking_module_msgs.msg import WalkingParam
@@ -39,17 +38,17 @@ class Walking(object):
         self.get_walking_param_srv_ = rospy.ServiceProxy(self.ns + '/walking/get_params', GetWalkingParam)
 
     def _cb_movement_done(self, msg):
-        print "movement_done: " + msg.data
+        print("movement_done: " + msg.data)
         if msg.data == "xxx":
             self.is_walking_done = True
 
     def _cb_rosinfo(self, msg):
         # print msg
         if msg.name == "/op3_manager":
-            print "rosinfo: " + msg.msg
+            print("rosinfo: " + msg.msg)
             walking_state = self.walking_query.search(msg.msg)
             if walking_state:
-                print "present_step: " + walking_state.group(1), "total_steps: " + walking_state.group(2)
+                print("present_step: " + walking_state.group(1), "total_steps: " + walking_state.group(2))
                 if walking_state.group(1) == walking_state.group(2):
                     self.is_walking_done = True
             elif msg.msg == "[END] Balance Gain":
@@ -95,7 +94,7 @@ class Walking(object):
             start_leg = direction[5:]+"_leg"
             msg.step_angle = step_angle
         else:
-            print "Dangerous!!! 停止步行"
+            print("Dangerous!!! 停止步行")
             return
         msg.command = direction
         msg.step_time = step_time
