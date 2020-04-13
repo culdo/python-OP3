@@ -4,8 +4,6 @@ from op3 import Op3
 
 if __name__ == '__main__':
 
-    op3_tester = Op3()
-
-    op3_tester.safety_suspend()
-    # op3_tester.display_img()
+    op3_tester = Op3(is_init=False)
+    op3_tester.google_stt()
     pass
