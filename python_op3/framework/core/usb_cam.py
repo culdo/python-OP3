@@ -8,7 +8,7 @@ import cv2
 
 class UsbCam(object):
     def __init__(self):
-        self._sub_joints = rospy.Subscriber("/usb_cam_node/image_raw/compressed",
+        self._sub_camera = rospy.Subscriber("/usb_cam_node/image_raw/compressed",
                                             CompressedImage, self._cb_img, queue_size=10)
 
     def _cb_img(self, msg):

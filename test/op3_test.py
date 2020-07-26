@@ -1,9 +1,6 @@
-from op3 import Op3
-
-# Maybe need to add unit test here
+from python_op3.op3 import Op3
 
 if __name__ == '__main__':
 
-    op3_tester = Op3(is_init=False)
-    op3_tester.google_stt()
+    op3_tester = Op3(is_init=False, vc_forever=False)
     pass

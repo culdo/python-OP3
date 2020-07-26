@@ -6,9 +6,10 @@ from std_msgs.msg import Bool, String
 
 
 class Controller(object):
-    def __init__(self):
-
-        self.is_module_applied = False
+    def __init__(self, ns, tts=None):
+        self.ns = ns
+        self.tts = tts
+        self.is_module_enabled = False
         self.present_module = None
         self.module_each_joint = {}
         self.angle_each_joint = {}
@@ -21,7 +22,7 @@ class Controller(object):
         # robotis status
         self._sub_status = rospy.Subscriber(self.ns + "/status", StatusMsg, self._cb_status, queue_size=10)
 
-        # set angle using robotis framwork
+        # set angle using robotis framework
         self._pub_legacy = rospy.Publisher(self.ns + "/set_joint_states", JointState, queue_size=0)
 
         self._pub_sync_write = rospy.Publisher(self.ns + "/sync_write_item", SyncWriteItem, queue_size=0)
@@ -52,7 +53,7 @@ class Controller(object):
 
     def _cb_module(self, msg):
         self.module_each_joint = dict(zip(msg.joint_name, msg.module_name))
-        self.is_module_applied = True
+        self.is_module_enabled = True
 
     def _cb_status(self, msg):
         if msg.module_name == "Action" or msg.module_name == "Base":
@@ -62,7 +63,7 @@ class Controller(object):
                     msg.status_msg[:6] == "Failed":
                 self.is_action_done = True
                 if msg.status_msg == "Finish Init Pose":
-                    self.is_module_applied = False
+                    self.is_module_enabled = False
             # else:
             #     self.google_tts("動作開始")
         elif msg.module_name == "SENSOR":
@@ -103,8 +104,8 @@ class Controller(object):
         if self.present_module != module:
             self._pub_module.publish(module)
             if is_blocking:
-                self.is_module_applied = False
-                while not self.is_module_applied:
+                self.is_module_enabled = False
+                while not self.is_module_enabled:
                     rospy.sleep(0.1)
             self.present_module = module
             print("Set " + module + " done.")
@@ -146,3 +147,9 @@ class Controller(object):
         msg.name = angles.keys()
         msg.position = angles.values()
         self._pub_legacy.publish(msg)
+
+    def _check_tts(self, text):
+        if self.tts:
+            self.tts(text)
+        else:
+            print(text)

@@ -5,9 +5,9 @@ import rospy
 
 
 class OpenCR(object):
-    def __init__(self):
-        self._sub_imu = rospy.Subscriber(self.ns + "/open_cr/imu", Imu, self._cb_imu, queue_size=10)
-        self._sub_button = rospy.Subscriber(self.ns + "/open_cr/button", String, self._cb_button, queue_size=10)
+    def __init__(self, ns):
+        self._sub_imu = rospy.Subscriber(ns + "/open_cr/imu", Imu, self._cb_imu, queue_size=10)
+        self._sub_button = rospy.Subscriber(ns + "/open_cr/button", String, self._cb_button, queue_size=10)
 
     def _cb_imu(self, msg):
         # print msg

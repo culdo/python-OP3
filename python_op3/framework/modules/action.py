@@ -1,24 +1,24 @@
 from op3_action_module_msgs.srv import IsRunning
 import rospy
 from std_msgs.msg import String, Int32
-from .robotis_controller import Controller
 
 
 class Action(object):
-    def __init__(self):
+    def __init__(self, ns):
         self.is_action_done = False
 
-        self._pub_ini_pose = rospy.Publisher(self.ns + "/base/ini_pose", String, queue_size=0)
-        self._pub_action = rospy.Publisher(self.ns + "/action/page_num", Int32, queue_size=0)
+        self._pub_ini_pose = rospy.Publisher(ns + "/base/ini_pose", String, queue_size=0)
+        self._pub_action = rospy.Publisher(ns + "/action/page_num", Int32, queue_size=0)
 
-        rospy.wait_for_service(self.ns + '/action/is_running')
-        self.action_is_running_srv = rospy.ServiceProxy(self.ns + '/action/is_running', IsRunning)
+        rospy.wait_for_service(ns + '/action/is_running')
+        self.action_is_running_srv = rospy.ServiceProxy(ns + '/action/is_running', IsRunning)
 
-    def play_motion(self, action, start_voice, done_voice=None, is_blocking=True):
+    def play_motion(self, action, start_voice="好哦", done_voice=None, is_blocking=True):
         """
         Available page_num:
          -2 : BREAK
          -1 : STOP
+         "ini_pose": initial pose
         #  0 : .
           4 : Thank you
           41: Introduction
@@ -56,15 +56,16 @@ class Action(object):
         if action == "ini_pose":
             self._pub_ini_pose.publish(action)
             self.present_module = action
-        else:
+        elif isinstance(action, int) or action.isnumeric():
+            action = int(action)
             self.check_module("action_module")
             self._pub_action.publish(action)
 
         if is_blocking:
             while not self.is_action_done:
                 rospy.sleep(0.1)
-        if done_voice:
-            self.google_tts(done_voice)
+            if done_voice:
+                self.google_tts(done_voice)
 
     def go_init_pose(self, start_voice="進入賢者模式。"):
         if self.present_module != "ini_pose":
