@@ -67,8 +67,8 @@ class Walking(object):
     def ready_for_walking(self):
         self.check_module("online_walking_module")
         self._pub_reset_body.publish(True)
-        # Spend 5 secs for getting ready pose.
-        rospy.sleep(5)
+        # Spend 3 secs for getting ready pose.
+        rospy.sleep(3)
         self.set_balance("on")
         self._pub_foot_distance.publish(0.09)
         rospy.sleep(0.5)

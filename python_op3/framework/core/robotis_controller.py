@@ -77,7 +77,7 @@ class Controller(object):
                     self.prev_time = curr_time
 
                 if self.is_action_done and self.is_walking_done:
-                    self.google_tts("電壓剩餘：" + msg.status_msg[15:-1] + "伏特。")
+                    # self.google_tts("電壓剩餘：" + msg.status_msg[15:-1] + "伏特。")
                     self.prev_time = curr_time
 
     def get_angles(self, joints):
@@ -109,12 +109,7 @@ class Controller(object):
                     rospy.sleep(0.1)
             self.present_module = module
             print("Set " + module + " done.")
-            if voice is None:
-                if self.present_module == "direct_control_module":
-                    self.google_tts("進入手動模式。")
-                elif self.present_module == "action_module":
-                    self.google_tts("進入動作模式。")
-            else:
+            if voice:
                 self.google_tts(voice)
         else:
             print(module + " already in use!!!")

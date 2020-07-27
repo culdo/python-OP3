@@ -7,24 +7,24 @@ import time
 
 class DirectControl(object):
     def __init__(self, ns):
-
+        self.ns = ns
         self._pub_joints = rospy.Publisher(ns + "/direct_control/set_joint_states", JointState, queue_size=0)
 
     def set_default_moving_time(self, param):
-        rospy.set_param(ns + "/direct_control/default_moving_time", param)
+        rospy.set_param(self.ns + "/direct_control/default_moving_time", param)
 
     def set_default_moving_angle(self, param):
-        rospy.set_param(ns + "/direct_control/default_moving_angle", param)
+        rospy.set_param(self.ns + "/direct_control/default_moving_angle", param)
 
     def set_check_collision(self, param):
-        rospy.set_param(ns + "/direct_control/check_collision", param)
+        rospy.set_param(self.ns + "/direct_control/check_collision", param)
 
     def head_control(self, pan, tilt):
         self.set_angles({"head_pan": np.pi * (pan / 180.0),
                          "head_tilt": np.pi * (tilt / 180.0)})
 
     def set_angles(self, angles):
-        # self.set_module("direct_control_module")
+        self.check_module("direct_control_module")
 
         msg = JointState()
         msg.name = angles.keys()

@@ -27,8 +27,9 @@ class Utility(object):
             while True:
                 with sr.Microphone(device_index=4) as source:
                     print("Say something")
+                    # audio = self.r.adjust_for_ambient_noise(source, duration=2)
                     audio = self.r.listen(source)
-                    print('time over')
+                    print('listened')
                 try:
                     self.stt_result = self.r.recognize_google(audio, language=lang)
                     print('text: %s' % self.stt_result)
