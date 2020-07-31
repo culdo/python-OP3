@@ -19,13 +19,8 @@ class DirectControl(object):
     def set_check_collision(self, param):
         rospy.set_param(self.ns + "/direct_control/check_collision", param)
 
-    def head_control(self, pan, tilt):
-        self.set_angles({"head_pan": np.pi * (pan / 180.0),
-                         "head_tilt": np.pi * (tilt / 180.0)})
-
     def set_angles(self, angles):
         self.check_module("direct_control_module")
-
         msg = JointState()
         msg.name = angles.keys()
         msg.position = angles.values()

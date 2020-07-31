@@ -15,24 +15,22 @@ class VoiceController:
         self.op3 = op3
         self.op3.google_stt(lang="en-US", blocking=False)
         self._pub_act = rospy.Publisher("/yolo_action", String)
-        self.stop = False
         self.op3.tts_lang = "en-US"
         self.run(forever)
 
     def run(self, forever):
         def func():
             print("Start voice control.")
-            while not self.stop:
+            while not rospy.is_shutdown():
                 stt_result = self.op3.stt_result.lower()
                 if stt_result == "come here":
-                    self.op3.online_walking_command(step_num=16)
+                    self.op3.online_walking_command(step_time=0.5, step_num=8)
                     self.op3.stt_result = ""
-                    time.sleep(5)
                     self._after_walking()
                 elif stt_result != "":
                     for action, texts in self.voice_cmd.items():
                         if stt_result in texts:
-                            self.op3.play_motion(action, start_voice="Okay", is_blocking=False)
+                            self.op3.play_motion(action, start_voice="Hello!", is_blocking=False)
                             self.op3.stt_result = ""
                             break
                 else:
@@ -44,9 +42,6 @@ class VoiceController:
         if forever:
             t.join()
 
-    def stop(self):
-        self.stop = True
-
     def _after_walking(self):
-        self.op3.head_control(pan=0.0, tilt=0.0)
+        self.op3.play_motion(1, start_voice=None)
         self._pub_act.publish("Start")

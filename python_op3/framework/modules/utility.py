@@ -24,7 +24,7 @@ class Utility(object):
 
     def google_stt(self, lang="zh-TW", blocking=False):
         def thread():
-            while True:
+            while not rospy.is_shutdown():
                 with sr.Microphone(device_index=4) as source:
                     print("Say something")
                     # audio = self.r.adjust_for_ambient_noise(source, duration=2)
@@ -33,11 +33,11 @@ class Utility(object):
                 try:
                     self.stt_result = self.r.recognize_google(audio, language=lang)
                     print('text: %s' % self.stt_result)
-                except (sr.UnknownValueError, sr.RequestError, BadStatusLine) as e:
+                except Exception as e:
                     print(type(e).__name__)
                     if "Too Many Requests" in str(e):
                         raise ConnectionRefusedError("Too Many Requests")
-        t = Thread(target=thread)
+        t = Thread(target=thread, daemon=True)
         t.start()
         if blocking:
             t.join()

@@ -28,8 +28,8 @@ class Op3(Controller, Utility, Action, DirectControl,
         Walking.__init__(self, ns)
         OpenCR.__init__(self, ns)
         UsbCam.__init__(self)
-        self.vc = VoiceController(self, vc_forever)
-        _ = YOLOAct(self)
+        # self.vc = VoiceController(self, vc_forever)
+        # _ = YOLOAct(self)
 
         self._sub_suspend = rospy.Subscriber("~/suspend", Bool, self._cb_suspend, queue_size=10)
 

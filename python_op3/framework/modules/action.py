@@ -5,7 +5,7 @@ from std_msgs.msg import String, Int32
 
 class Action(object):
     def __init__(self, ns):
-        self.is_action_done = False
+        self.is_action_done = True
 
         self._pub_ini_pose = rospy.Publisher(ns + "/base/ini_pose", String, queue_size=0)
         self._pub_action = rospy.Publisher(ns + "/action/page_num", Int32, queue_size=0)
@@ -48,6 +48,9 @@ class Action(object):
           204 : Look
           126 : Push up
         """
+        if not self.is_action_done:
+            print("still acting.")
+            return
         self.is_action_done = False
 
         if start_voice:
