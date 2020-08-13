@@ -23,11 +23,7 @@ class VoiceController:
             print("Start voice control.")
             while not rospy.is_shutdown():
                 stt_result = self.op3.stt_result.lower()
-                if stt_result == "come here":
-                    self.op3.online_walking_command(step_time=0.5, step_num=8)
-                    self.op3.stt_result = ""
-                    self._after_walking()
-                elif stt_result != "":
+                if stt_result != "":
                     for action, texts in self.voice_cmd.items():
                         if stt_result in texts:
                             self.op3.play_motion(action, start_voice="Hello!", is_blocking=False)

@@ -22,16 +22,23 @@ class Utility(object):
         tts.save(audio_file)
         self._pub_sound.publish(os.path.realpath(audio_file))
 
+    def record_speech(self, file_name, echo=False):
+        with open(file_name, 'wb') as f:
+            f.write(self.audio.get_wav_data())
+        if echo:
+            self._pub_sound.publish(os.path.realpath(file_name))
+
     def google_stt(self, lang="zh-TW", blocking=False):
         def thread():
             while not rospy.is_shutdown():
                 with sr.Microphone(device_index=4) as source:
+                    self.r.adjust_for_ambient_noise(source)
                     print("Say something")
-                    # audio = self.r.adjust_for_ambient_noise(source, duration=2)
-                    audio = self.r.listen(source)
+                    self.audio = self.r.listen(source)
+                    self.record_speech("speech.wav", echo=True)
                     print('listened')
                 try:
-                    self.stt_result = self.r.recognize_google(audio, language=lang)
+                    self.stt_result = self.r.recognize_google(self.audio, language=lang)
                     print('text: %s' % self.stt_result)
                 except Exception as e:
                     print(type(e).__name__)

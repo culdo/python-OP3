@@ -1,4 +1,5 @@
 import rospy
+from python_op3.voice_comm.voice_control import VoiceController
 from std_msgs.msg import Bool
 
 from .framework.core.open_cr import OpenCR
@@ -6,14 +7,13 @@ from .framework.core.robotis_controller import Controller
 from .framework.core.usb_cam import UsbCam
 from .framework.modules.action import Action
 from .framework.modules.direct_control import DirectControl
+from .framework.modules.head_control import HeadControl
 from .framework.modules.utility import Utility
-from .framework.modules.walking import Walking
-from .vision_comm.yolo_rmt import YOLOAct
-from .voice_comm.voice_control import VoiceController
+from .framework.modules.online_walking import OnlineWalking
 
 
-class Op3(Controller, Utility, Action, DirectControl,
-          Walking, OpenCR, UsbCam):
+class Op3(Controller, Utility, Action, DirectControl, HeadControl,
+          OnlineWalking, OpenCR, UsbCam):
     """
     Client ROS class for manipulating Robotis-OP3 in real-world and Gazebo
     """
@@ -25,10 +25,11 @@ class Op3(Controller, Utility, Action, DirectControl,
         Utility.__init__(self)
         Action.__init__(self, ns)
         DirectControl.__init__(self, ns)
-        Walking.__init__(self, ns)
+        HeadControl.__init__(self, ns)
+        OnlineWalking.__init__(self, ns)
         OpenCR.__init__(self, ns)
         UsbCam.__init__(self)
-        # self.vc = VoiceController(self, vc_forever)
+        self.vc = VoiceController(self, vc_forever)
         # _ = YOLOAct(self)
 
         self._sub_suspend = rospy.Subscriber("~/suspend", Bool, self._cb_suspend, queue_size=10)

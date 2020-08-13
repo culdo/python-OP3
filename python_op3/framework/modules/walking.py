@@ -1,130 +1,143 @@
-import re
+#!/usr/bin/env python3
+import json
 
+import numpy as np
 import rospy
-from geometry_msgs.msg import Pose
-from op3_online_walking_module_msgs.msg import FootStepCommand
-from op3_online_walking_module_msgs.msg import WalkingParam as OnlineWalkingParam
 from op3_walking_module_msgs.msg import WalkingParam
 from op3_walking_module_msgs.srv import GetWalkingParam
-from rosgraph_msgs.msg import Log
-from std_msgs.msg import Float64, String, Bool
+from robotis_controller_msgs.msg import StatusMsg
+from sensor_msgs.msg import Imu
+from std_msgs.msg import String
+
+# from base.step_state import StepState
+
+walking_params = [
+    "init_x_offset",  # [m]
+    "init_y_offset",  # [m]
+    "init_z_offset",  # [m]
+
+    "init_roll_offset",  # [radius]
+    "init_pitch_offset",  # [radius]
+    "init_yaw_offset",  # [radius]
+
+    "hip_pitch_offset",  # [radius]
+    "period_time",  # [ms]
+    "dsp_ratio",  # [double_stance_time/single_stance_time]
+
+    "step_fb_ratio",  # [m]
+    "z_move_amplitude",  # foot_height      [m]
+    "y_swap_amplitude",  # swing_right_left [m]
+
+    "z_swap_amplitude",  # swing_top_down   [m]
+    "pelvis_offset",  # [radius]
+    "arm_swing_gain"  # [m]
+]
 
 
-class Walking(object):
-    def __init__(self, ns):
+class RosRampWalk:
+    def __init__(self, epi, json_file, ns="/robotis"):
+        self.ep_i = epi
+        self.json_file = json_file
+        rospy.init_node("test_walker")
+        # Start walking
+        _ = rospy.Subscriber(ns + "/status", StatusMsg, self._cb_status, queue_size=10)
+        _ = rospy.Subscriber("/imu", Imu, self._cb_imu, queue_size=10)
+        # start, stop, balance on, balance off, save
+        self._pub_cmd = rospy.Publisher(ns + "/walking/command", String, queue_size=10)
+        self._pub_set_params = rospy.Publisher(ns + "/walking/set_params", WalkingParam, queue_size=10)
+        self._pub_module = rospy.Publisher(ns + "/enable_ctrl_module", String, queue_size=0)
 
-        self.is_balance_set = False
-        self.is_walking_done = False
-        self.walking_query = re.compile("(?<=\[END] Walking Control \()(\d+)/(\d+)")
+        # self.step_state = StepState()
+        rospy.wait_for_service(ns + "/walking/get_params")
+        self.get_param = rospy.ServiceProxy(ns + "/walking/get_params", GetWalkingParam)
+        rospy.on_shutdown(self.shutdown_hook)
+        rospy.sleep(0.5)
 
-        # ros logging subscriber for walking control
-        self._sub_rosinfo = rospy.Subscriber("/rosout", Log, self._cb_rosinfo, queue_size=10)
+    def _cb_status(self, msg):
+        if msg.module_name == "op3_walking_module":
+            self.status = msg.status_msg
 
-        # Walking
-        self._pub_walking_command = rospy.Publisher(ns + "/walking/command", String, queue_size=0)
-        self._pub_walking_params = rospy.Publisher(ns + "/walking/set_params", WalkingParam, queue_size=0)
-        self._pub_head_scan = rospy.Publisher(ns + "/head_control/scan_command", String, queue_size=0)
+    def _cb_imu(self, imu):
+        self.imu = imu
 
-        # Online Walking
-        self._sub_movement_done = rospy.Subscriber(ns + "/movement_done", String, self._cb_movement_done,
-                                                   queue_size=10)
+    def _update_walking_params(self, param_list):
+        param_dict = dict(zip(walking_params, param_list))
+        param = self.get_param().parameters
+        # TODO: Transform Webots units to ROS units
+        param.x_move_amplitude = 0.020
+        for k, v in param_dict.items():
+            if k in ["init_x_offset", "init_y_offset", "init_z_offset", "period_time",
+                     "x_swap_amplitude", "y_swap_amplitude", "z_swap_amplitude", "z_move_amplitude"]:
+                v *= 0.001
+            elif k in ["init_roll_offset", "init_pitch_offset", "init_yaw_offset",
+                       "hip_pitch_offset", "pelvis_offset"]:
+                v *= (np.pi / 180)
+            if k == "arm_swing_gain" or v < 1.0 or (k == "step_fb_ratio" and v < 1.10):
+                param.__setattr__(k, v)
+            else:
+                raise AssertionError("Danger! Out of parameter range. -> %s:%.2f" % (k, v))
+        self._pub_set_params.publish(param)
 
-        self._pub_online_walking = rospy.Publisher(ns + "/online_walking/foot_step_command", FootStepCommand,
-                                                   queue_size=0)
-        self._pub_online_param = rospy.Publisher(ns + "/online_walking/walking_param", OnlineWalkingParam,
-                                                 queue_size=0)
-        self._pub_body_offset = rospy.Publisher(ns + "/online_walking/body_offset", Pose,
-                                                queue_size=0)
-        self._pub_foot_distance = rospy.Publisher(ns + "/online_walking/foot_distance", Float64, queue_size=0)
-        self._pub_wholebody_balance = rospy.Publisher(ns + "/online_walking/wholebody_balance_msg", String,
-                                                      queue_size=0)
-        self._pub_reset_body = rospy.Publisher(ns + "/online_walking/reset_body", Bool, queue_size=0)
+    def get_param_list(self):
+        param = self.get_param()
+        for p in param.__dict__:
+            pass
 
-        # Walking Services
-        rospy.wait_for_service(ns + '/walking/get_params')
-        self.get_walking_param_srv_ = rospy.ServiceProxy(ns + '/walking/get_params', GetWalkingParam)
+    def pending_64(self):
+        acc_l = []
+        gyro_l = []
+        for _ in range(64):
+            acc = self.imu.linear_acceleration
+            acc_l.append([acc.x, acc.y, acc.z])
+            gyro = self.imu.angular_velocity
+            gyro_l.append([gyro.x, gyro.y, gyro.z])
+        state = np.array([acc_l, gyro_l])
+        return state
 
-    def _cb_movement_done(self, msg):
-        print("movement_done: " + msg.data)
-        if msg.data == "xxx":
-            self.is_walking_done = True
+    def shutdown_hook(self):
+        self._pub_cmd.publish("stop")
 
-    def _cb_rosinfo(self, msg):
-        # print msg
-        print("rosinfo: " + msg.msg)
-        if msg.name == "/op3_manager":
-            walking_state = self.walking_query.search(msg.msg)
-            if walking_state:
-                print("present_step: " + walking_state.group(1), "total_steps: " + walking_state.group(2))
-                if walking_state.group(1) == walking_state.group(2):
-                    self.is_walking_done = True
-            elif msg.msg == "[END] Balance Gain":
-                self.is_balance_set = True
-            elif msg.msg == "[END] Joint Control":
-                self.present_module = "online_walking_module"
-            elif msg.msg == "Walking Enable":
-                self.present_module = "op3_walking_module"
+    def run(self):
+        # Enable walking module
+        self._pub_module.publish("walking_module")
+        step_params = self.read_ep_params()
+        self._pub_cmd.publish("start")
 
-    def set_balance(self, sw):
-        self.is_balance_set = False
-        self._pub_wholebody_balance.publish("balance_" + sw)
-        while not self.is_balance_set:
-            rospy.sleep(0.1)
+        for param in step_params:
+            if not rospy.is_shutdown():
+                self._update_walking_params(param)
+                print("Set param successfully.")
+                print("Walk step each 1 second...")
+                rospy.sleep(1)
 
-    def set_body_offset(self, offset_x=0.03, offset_y=0.0, offset_z=0.0, foot_distance=0.09):
-        pose = Pose()
-        pose.position.x = offset_x
-        pose.position.y = offset_y
-        pose.position.z = offset_z
-        self._pub_foot_distance.publish(foot_distance)
-        self._pub_body_offset.publish(pose)
-        rospy.sleep(1)
+    def read_ep_params(self):
+        with open(self.json_file) as f:
+            data = json.load(f)
+            eps = data["params_detail"]
+            ramp_angle = float(list(eps[self.ep_i].keys())[0])
+            print("ramp_angle: %.2f" % ramp_angle)
+            params = list(eps[self.ep_i].values())[0]
+        return params
 
-    def set_online_param(self, dsp_ratio=0.20, lipm_height=0.12, foot_height_max=0.05, zmp_offset_x=0.0,
-                         zmp_offset_y=0.0):
-        param = OnlineWalkingParam(dsp_ratio=dsp_ratio, lipm_height=lipm_height, foot_height_max=foot_height_max,
-                                   zmp_offset_x=zmp_offset_x, zmp_offset_y=zmp_offset_y)
-        self._pub_online_param.publish(param)
+    # TODO: Figure out how to transform to real robot.
+    def _walk_ready(self):
+        self._pub_cmd.publish("start")
+        # Prepare initial state
+        gyro = [self.imu.angular_velocity.x,
+                self.imu.angular_velocity.y,
+                self.imu.angular_velocity.z]
+        accel = [self.imu.linear_acceleration.x,
+                 self.imu.linear_acceleration.y,
+                 self.imu.linear_acceleration.z]
+        self.step_state.accel_xyz_signal.append(accel)
+        self.step_state.gyro_xyz_signal.append(gyro)
 
-    def ready_for_walking(self, **kwargs):
-        self.play_motion(80, start_voice=None)
-        self.check_module("online_walking_module")
-        self._pub_reset_body.publish(True)
-        # Spend 1 secs for getting ready pose.
-        rospy.sleep(1)
-        self.set_balance("on")
-        self.set_online_param(**kwargs)
-        self.set_body_offset(**kwargs)
 
-    def online_walking_command(self, direction="forward", step_num=4,
-                               step_time=0.50, step_length=0.04, side_length=0.03,
-                               step_angle=0.2, start_leg="right_leg", is_blocking=True, **kwargs):
-        """
-        Available direction: turn_left, turn_right, forward,
-                             backward, stop, left, right
-        """
-        if self.present_module != "online_walking_module":
-            self.ready_for_walking(**kwargs)
+def run(*args, **kwargs):
+    op3 = RosRampWalk(*args, **kwargs)
+    op3.run()
+    # op3._update_walking_params()
 
-        self.is_walking_done = False
-        msg = FootStepCommand()
-        if direction in ["forward", "backward"]:
-            msg.step_length = step_length
-        elif direction in ["side_left", "side_right"]:
-            start_leg = direction[5:] + "_leg"
-            msg.side_length = side_length
-        elif direction in ["turn_left", "turn_right"]:
-            start_leg = direction[5:] + "_leg"
-            msg.step_angle = step_angle
-        else:
-            print("Dangerous!!! 停止步行")
-            return
-        msg.command = direction
-        msg.step_time = step_time
-        msg.step_num = step_num
-        msg.start_leg = start_leg
-        self._pub_online_walking.publish(msg)
-        if is_blocking:
-            while not self.is_walking_done:
-                rospy.sleep(0.1)
-            rospy.sleep(1)
+
+if __name__ == '__main__':
+    run("up_params.json", epi=0)
