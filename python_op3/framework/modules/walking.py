@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+from threading import Thread
 
 import numpy as np
 import rospy
@@ -34,14 +35,13 @@ walking_params = [
 ]
 
 
-class RosRampWalk:
-    def __init__(self, epi, json_file, ns="/robotis"):
-        self.ep_i = epi
-        self.json_file = json_file
+class Walk:
+    def __init__(self, ns="/robotis"):
+        self.step_count = 0
         rospy.init_node("test_walker")
         # Start walking
         _ = rospy.Subscriber(ns + "/status", StatusMsg, self._cb_status, queue_size=10)
-        _ = rospy.Subscriber("/imu", Imu, self._cb_imu, queue_size=10)
+        _ = rospy.Subscriber(ns + "/open_cr/imu", Imu, self._cb_imu, queue_size=10)
         # start, stop, balance on, balance off, save
         self._pub_cmd = rospy.Publisher(ns + "/walking/command", String, queue_size=10)
         self._pub_set_params = rospy.Publisher(ns + "/walking/set_params", WalkingParam, queue_size=10)
@@ -50,20 +50,25 @@ class RosRampWalk:
         # self.step_state = StepState()
         rospy.wait_for_service(ns + "/walking/get_params")
         self.get_param = rospy.ServiceProxy(ns + "/walking/get_params", GetWalkingParam)
-        rospy.on_shutdown(self.shutdown_hook)
+        self.is_stop = True
+        self.imu = None
+
+        rospy.on_shutdown(self.stop)
         rospy.sleep(0.5)
 
     def _cb_status(self, msg):
-        if msg.module_name == "op3_walking_module":
+        if msg.module_name == "Walking":
             self.status = msg.status_msg
+            if "step time_:" in self.status:
+                self.step_count += 1
+                print(self.step_count)
 
-    def _cb_imu(self, imu):
-        self.imu = imu
+    def _cb_imu(self, msg):
+        self.imu = msg
 
     def _update_walking_params(self, param_list):
         param_dict = dict(zip(walking_params, param_list))
         param = self.get_param().parameters
-        # TODO: Transform Webots units to ROS units
         param.x_move_amplitude = 0.020
         for k, v in param_dict.items():
             if k in ["init_x_offset", "init_y_offset", "init_z_offset", "period_time",
@@ -72,7 +77,7 @@ class RosRampWalk:
             elif k in ["init_roll_offset", "init_pitch_offset", "init_yaw_offset",
                        "hip_pitch_offset", "pelvis_offset"]:
                 v *= (np.pi / 180)
-            if k == "arm_swing_gain" or v < 1.0 or (k == "step_fb_ratio" and v < 1.10):
+            if k == "arm_swing_gain" or v < 1.0 or (k == "step_fb_ratio" and v < 1.20):
                 param.__setattr__(k, v)
             else:
                 raise AssertionError("Danger! Out of parameter range. -> %s:%.2f" % (k, v))
@@ -83,40 +88,46 @@ class RosRampWalk:
         for p in param.__dict__:
             pass
 
-    def pending_64(self):
-        acc_l = []
-        gyro_l = []
-        for _ in range(64):
-            acc = self.imu.linear_acceleration
-            acc_l.append([acc.x, acc.y, acc.z])
-            gyro = self.imu.angular_velocity
-            gyro_l.append([gyro.x, gyro.y, gyro.z])
-        state = np.array([acc_l, gyro_l])
-        return state
-
-    def shutdown_hook(self):
+    def stop(self):
         self._pub_cmd.publish("stop")
+        self.is_stop = True
 
-    def run(self):
+    def run_th(self, json_file, ep_i=0):
+        self.is_stop = False
+        self.step_count = 0
+        step_params = self._read_ep_params(json_file, ep_i)
+        # Set pose
+        self._update_walking_params(step_params[0])
+        rospy.sleep(5)
+        print("json_file:%s epi:%s" % (json_file, ep_i))
         # Enable walking module
         self._pub_module.publish("walking_module")
-        step_params = self.read_ep_params()
         self._pub_cmd.publish("start")
 
+        if len(step_params) == 1:
+            step_params.extend([[] for _ in range(14)])
         for param in step_params:
+            if self.is_stop:
+                break
             if not rospy.is_shutdown():
                 self._update_walking_params(param)
                 print("Set param successfully.")
                 print("Walk step each 1 second...")
                 rospy.sleep(1)
 
-    def read_ep_params(self):
-        with open(self.json_file) as f:
+        self.stop()
+
+    def run(self, *args, **kwargs):
+        if self.is_stop:
+            Thread(target=self.run_th, args=args, kwargs=kwargs).start()
+
+    def _read_ep_params(self, json_file, ep_i):
+        with open(json_file) as f:
             data = json.load(f)
             eps = data["params_detail"]
-            ramp_angle = float(list(eps[self.ep_i].keys())[0])
+            ramp_angle = float(list(eps[ep_i].keys())[0])
             print("ramp_angle: %.2f" % ramp_angle)
-            params = list(eps[self.ep_i].values())[0]
+            params = list(eps[ep_i].values())[0]
         return params
 
     # TODO: Figure out how to transform to real robot.
@@ -134,7 +145,7 @@ class RosRampWalk:
 
 
 def run(*args, **kwargs):
-    op3 = RosRampWalk(*args, **kwargs)
+    op3 = Walk(*args, **kwargs)
     op3.run()
     # op3._update_walking_params()
 

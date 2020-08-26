@@ -10,6 +10,7 @@ from .framework.modules.direct_control import DirectControl
 from .framework.modules.head_control import HeadControl
 from .framework.modules.utility import Utility
 from .framework.modules.online_walking import OnlineWalking
+from .framework.modules.walking import Walk
 
 
 class Op3(Controller, Utility, Action, DirectControl, HeadControl,
@@ -30,6 +31,7 @@ class Op3(Controller, Utility, Action, DirectControl, HeadControl,
         OpenCR.__init__(self, ns)
         UsbCam.__init__(self)
         self.vc = VoiceController(self, vc_forever)
+        self.walker = Walk()
         # _ = YOLOAct(self)
 
         self._sub_suspend = rospy.Subscriber("~/suspend", Bool, self._cb_suspend, queue_size=10)

@@ -17,18 +17,38 @@ class VoiceController:
         self._pub_act = rospy.Publisher("/yolo_action", String)
         self.op3.tts_lang = "en-US"
         self.run(forever)
+        self.walking = False
 
     def run(self, forever):
+        self.json_f, self.ep_i = None, None
         def func():
             print("Start voice control.")
             while not rospy.is_shutdown():
                 stt_result = self.op3.stt_result.lower()
                 if stt_result != "":
-                    for action, texts in self.voice_cmd.items():
-                        if stt_result in texts:
-                            self.op3.play_motion(action, start_voice="Hello!", is_blocking=False)
-                            self.op3.stt_result = ""
-                            break
+                    if stt_result == "get over it":
+                        self.walking = True
+                    if self.walking:
+                        if stt_result == "up":
+                            self.json_f = "up_params.json"
+                        elif stt_result == "down":
+                            self.json_f = "down_params.json"
+                        elif stt_result in ["one", "1"]:
+                            self.ep_i = 1
+                        elif stt_result in ["two", "2"]:
+                            self.ep_i = 2
+                        elif stt_result in ["three", "3"]:
+                            self.ep_i = 3
+                        if self.json_f and self.ep_i:
+                            self.op3.google_tts("Walk %s on episode %s" % (self.json_f, self.ep_i))
+                            self.op3.walker.run(self.json_f, self.ep_i)
+                            self.json_f, self.ep_i = None, None
+                    else:
+                        for action, texts in self.voice_cmd.items():
+                            if stt_result in texts:
+                                self.op3.play_motion(action, start_voice="Hello!", is_blocking=False)
+                                self.op3.stt_result = ""
+                                break
                 else:
                     time.sleep(0.01)
             print("Stop voice control.")
