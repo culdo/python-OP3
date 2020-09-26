@@ -53,6 +53,11 @@ class Walk:
         self.is_stop = True
         self.imu = None
 
+        ddpg_steps = 64
+        webot_time_step = 16
+        time_unit = 8
+        self.period_steps = ddpg_steps * (webot_time_step / time_unit)
+
         rospy.on_shutdown(self.stop)
         rospy.sleep(0.5)
 
@@ -89,12 +94,12 @@ class Walk:
             pass
 
     def stop(self):
+        print("Stop walk.")
         self._pub_cmd.publish("stop")
         self.is_stop = True
 
     def run_th(self, json_file, ep_i=0):
         self.is_stop = False
-        self.step_count = 0
         step_params = self._read_ep_params(json_file, ep_i)
         # Set pose
         self._update_walking_params(step_params[0])
@@ -106,14 +111,15 @@ class Walk:
 
         if len(step_params) == 1:
             step_params.extend([[] for _ in range(14)])
-        for param in step_params:
+        self.step_count = 0
+        for i, param in enumerate(step_params):
+            prev_sc = self.step_count
+            while (self.step_count == prev_sc or self.step_count % self.period_steps != 0) and not self.is_stop:
+                rospy.sleep(0.001)
             if self.is_stop:
                 break
-            if not rospy.is_shutdown():
-                self._update_walking_params(param)
-                print("Set param successfully.")
-                print("Walk step each 1 second...")
-                rospy.sleep(1)
+            self._update_walking_params(param)
+            print("Set step %s param." % i)
 
         self.stop()
 

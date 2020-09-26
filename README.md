@@ -1,5 +1,13 @@
 # Simple Python API for ROBOTIS OP3
 Intend to easier Robot develop.
+## Robot Interaction
+Use with [Darknet Video](https://github.com/culdo/darknet_video)
+### Gesture Recognition
+<img src="https://github.com/culdo/darknet_video/blob/master/docs/robot_gesture.gif?raw=true" width="80%"/>
+
+### Head Tracking
+<img src="https://github.com/culdo/darknet_video/blob/master/docs/robot_tracking.gif?raw=true" width="80%"/>
+
 ## Requires
 * Environment setup followed [official e-manual](http://emanual.robotis.com/docs/en/platform/op3/recovery/#ros-installation--environment-setup)
 * Modified [ROBOTIS-OP3 package](https://github.com/culdo/ROBOTIS-OP3)

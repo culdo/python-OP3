@@ -2,10 +2,9 @@
 
 import numpy as np
 import rospy
+from std_msgs.msg import Float32MultiArray, Bool
 
 from python_op3.framework.modules.walking import Walk
-
-# from base.step_state import StepState
 
 walking_params = [
     "init_x_offset",  # [m]
@@ -34,10 +33,9 @@ class AdaptiveWalk(Walk):
     def __init__(self):
 
         super().__init__()
-        ddpg_steps = 64
-        webot_time_step = 16
-        time_unit = 8
-        self.period_steps = ddpg_steps * (webot_time_step / time_unit)
+
+        self._pub_state = rospy.Publisher("/adaptive_walker/imu_data", Float32MultiArray)
+        self._pub_fallen = rospy.Publisher("/adaptive_walker/fallen", Bool)
 
         self.acc_l = []
         self.gyro_l = []
@@ -70,7 +68,8 @@ class AdaptiveWalk(Walk):
 
         self.step_count = 0
         while not self.is_stop:
-            if self.step_count > 0:
+            prev_sc = self.step_count
+            if prev_sc != self.step_count:
                 if len(self.acc_l) < 64:
                     if self.step_count % 2 == 0:
                         acc = self.imu.linear_acceleration
@@ -88,7 +87,8 @@ class AdaptiveWalk(Walk):
         self.stop()
 
     def get_ddpg_predict(self):
-        pass
+        state = [self.acc_l, self.gyro_l]
+        self._pub_state.publish(state)
 
 
 def run(*args, **kwargs):
