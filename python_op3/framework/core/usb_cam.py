@@ -10,13 +10,16 @@ class UsbCam(object):
     def __init__(self):
         self._sub_camera = rospy.Subscriber("/usb_cam_node/image_raw/compressed",
                                             CompressedImage, self._cb_img, queue_size=10)
+        self.img = None
+        while self.img is None:
+            rospy.sleep(0.01)
 
     def _cb_img(self, msg):
         self.img = cv2.imdecode(np.fromstring(msg.data, dtype=np.uint8), cv2.IMREAD_COLOR)
 
     def display_img(self):
         def thread():
-            while True:
+            while not rospy.is_shutdown():
                 cv2.imshow("usb_cam_topic", self.img)
                 if cv2.waitKey(1) == ord('q'):
                     break
