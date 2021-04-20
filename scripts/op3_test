@@ -1,0 +1,7 @@
+#! /usr/bin/env python3
+from python_op3.op3 import Op3
+# this file wouldn't do anything instead connect testing.
+if __name__ == '__main__':
+    # Use remote PC to connect OP3 robot.
+    # If is_remote is False (Default, which is directly run on OP3), it can do pyaudio-based chatbot feature.
+    op3_tester = Op3(is_init=False, vc_forever=False, is_remote=True)

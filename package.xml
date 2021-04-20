@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>python_op3</name>
+  <version>0.0.0</version>
+  <description>The python_op3 package</description>
+
+  <maintainer email="wuorsut@gmail.com">Jun Hu</maintainer>
+  <license>MIT</license>
+  <url type="website">https://github.com/culdo/python_op3</url>
+  <author email="wuorsut@gmail.com">Jun Hu</author>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <exec_depend>rospy</exec_depend>
+
+  <export>
+    <architecture_independent/>
+  </export>
+</package>
