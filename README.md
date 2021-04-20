@@ -31,4 +31,4 @@ catkin_make
 You can add `src/` to `Source Directory` under the project.
 
 ## Simulation
-Not Test Yet
+You can look at [my another project](https://github.com/culdo/bullet_op3) about simulation using **pybullet** simulator.
