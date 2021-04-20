@@ -38,7 +38,7 @@ walking_params = [
 class Walk:
     def __init__(self, ns="/robotis"):
         self.step_count = 0
-        rospy.init_node("test_walker")
+        # rospy.init_node("test_walker")
         # Start walking
         _ = rospy.Subscriber(ns + "/status", StatusMsg, self._cb_status, queue_size=10)
         _ = rospy.Subscriber(ns + "/open_cr/imu", Imu, self._cb_imu, queue_size=10)

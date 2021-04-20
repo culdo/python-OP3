@@ -19,7 +19,7 @@ class Op3(Controller, Utility, Action, DirectControl, HeadControl,
     Client ROS class for manipulating Robotis-OP3 in real-world and Gazebo
     """
 
-    def __init__(self, ns="/robotis", is_init=True, vc_forever=False):
+    def __init__(self, ns="/robotis", is_init=True, vc_forever=False, is_remote=False):
         rospy.init_node("op3_tester")
 
         Controller.__init__(self, ns)
@@ -30,7 +30,8 @@ class Op3(Controller, Utility, Action, DirectControl, HeadControl,
         OnlineWalking.__init__(self, ns)
         OpenCR.__init__(self, ns)
         UsbCam.__init__(self)
-        self.vc = VoiceController(self, vc_forever)
+        if not is_remote:
+            self.vc = VoiceController(self, vc_forever)
         self.walker = Walk()
         # _ = YOLOAct(self)
 
