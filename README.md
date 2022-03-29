@@ -3,10 +3,10 @@ Intend to easier Robot develop.
 ## Robot Interaction
 Use with [Darknet Video](https://github.com/culdo/darknet_video)
 ### Gesture Recognition
-<img src="https://github.com/culdo/darknet_video/blob/master/docs/robot_gesture.gif?raw=true" width="80%"/>
+<img src="https://user-images.githubusercontent.com/26900749/160601150-7f3b9284-e254-4b28-9b67-52172bdb41d4.gif" width="80%"/>
 
 ### Head Tracking
-<img src="https://github.com/culdo/darknet_video/blob/master/docs/robot_tracking.gif?raw=true" width="80%"/>
+<img src="https://user-images.githubusercontent.com/26900749/160601155-d7568791-a870-47e2-b6cd-4fa5d839bafc.gif" width="80%"/>
 
 ## Requires
 * Environment setup followed [official e-manual](http://emanual.robotis.com/docs/en/platform/op3/recovery/#ros-installation--environment-setup)
