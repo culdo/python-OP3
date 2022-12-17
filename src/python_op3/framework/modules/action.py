@@ -53,8 +53,6 @@ class Action(object):
             return
         self.is_action_done = False
 
-        if start_voice:
-            self.google_tts(start_voice)
 
         if action == "ini_pose":
             self._pub_ini_pose.publish(action)
@@ -67,8 +65,6 @@ class Action(object):
         if is_blocking:
             while not self.is_action_done:
                 rospy.sleep(0.1)
-            if done_voice:
-                self.google_tts(done_voice)
 
     def go_init_pose(self, start_voice="進入賢者模式。"):
         if self.present_module != "ini_pose":

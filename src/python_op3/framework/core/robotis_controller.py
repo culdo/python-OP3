@@ -109,8 +109,6 @@ class Controller(object):
                     rospy.sleep(0.1)
             self.present_module = module
             print("Set " + module + " done.")
-            if voice:
-                self.google_tts(voice)
         else:
             print(module + " already in use!!!")
 
